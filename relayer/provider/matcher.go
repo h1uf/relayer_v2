@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
 
 	sdkcodec "github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	tmclient "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	clienttypes "github.com/cosmos/ibc-go/v9/modules/core/02-client/types"
+	ibcexported "github.com/cosmos/ibc-go/v9/modules/core/exported"
+	tmclient "github.com/cosmos/ibc-go/v9/modules/light-clients/07-tendermint"
 )
 
 var tendermintClientCodec = tmClientCodec()
@@ -80,64 +79,64 @@ func CheckForMisbehaviour(
 // cometMatcher determines if there is an existing light client on the src chain, tracking the dst chain,
 // with a state which matches a proposed new client state constructed from the dst chain.
 func cometMatcher(ctx context.Context, src, dst ChainProvider, existingClientID string, existingClient, newClient ibcexported.ClientState) (string, error) {
-	newClientState, ok := newClient.(*tmclient.ClientState)
-	if !ok {
-		return "", fmt.Errorf("got type(%T) expected type(*tmclient.ClientState)", newClient)
-	}
-
-	existingClientState, ok := existingClient.(*tmclient.ClientState)
-	if !ok {
-		return "", fmt.Errorf("got type(%T) expected type(*tmclient.ClientState)", existingClient)
-	}
-
+	//newClientState, ok := newClient.(*tmclient.ClientState)
+	//if !ok {
+	//	return "", fmt.Errorf("got type(%T) expected type(*tmclient.ClientState)", newClient)
+	//}
+	//
+	//existingClientState, ok := existingClient.(*tmclient.ClientState)
+	//if !ok {
+	//	return "", fmt.Errorf("got type(%T) expected type(*tmclient.ClientState)", existingClient)
+	//}
+	//
 	// Check if the client states match.
 	// NOTE: FrozenHeight.IsZero() is a sanity check, the client to be created should always
 	// have a zero frozen height and therefore should never match with a frozen client.
-	if isMatchingTendermintClient(*newClientState, *existingClientState) && existingClientState.FrozenHeight.IsZero() {
-		srch, err := src.QueryLatestHeight(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		// Query the src chain for the latest consensus state of the potential matching client.
-		consensusStateResp, err := src.QueryClientConsensusState(ctx, srch, existingClientID, existingClientState.GetLatestHeight())
-		if err != nil {
-			return "", err
-		}
-
-		exportedConsState, err := clienttypes.UnpackConsensusState(consensusStateResp.ConsensusState)
-		if err != nil {
-			return "", err
-		}
-
-		existingConsensusState, ok := exportedConsState.(*tmclient.ConsensusState)
-		if !ok {
-			return "", fmt.Errorf("got type(%T) expected type(*tmclient.ConsensusState)", exportedConsState)
-		}
-
-		// If the existing client state has not been updated within the trusting period,
-		// we do not want to use the existing client since it's in an expired state.
-		if existingClientState.IsExpired(existingConsensusState.Timestamp, time.Now()) {
-			return "", tmclient.ErrTrustingPeriodExpired
-		}
-
-		// Construct a header for the consensus state of the counterparty chain.
-		ibcHeader, err := dst.QueryIBCHeader(ctx, int64(existingClientState.GetLatestHeight().GetRevisionHeight()))
-		if err != nil {
-			return "", err
-		}
-
-		consensusState, ok := ibcHeader.ConsensusState().(*tmclient.ConsensusState)
-		if !ok {
-			return "", fmt.Errorf("got type(%T) expected type(*tmclient.ConsensusState)", consensusState)
-		}
-
-		// Determine if the existing consensus state on src for the potential matching client is identical
-		// to the consensus state of the counterparty chain.
-		if isMatchingTendermintConsensusState(existingConsensusState, consensusState) {
-			return existingClientID, nil // found matching client
-		}
-	}
+	//if isMatchingTendermintClient(*newClientState, *existingClientState) && existingClientState.FrozenHeight.IsZero() {
+	//	srch, err := src.QueryLatestHeight(ctx)
+	//	if err != nil {
+	//		return "", err
+	//	}
+	//
+	//	// Query the src chain for the latest consensus state of the potential matching client.
+	//	consensusStateResp, err := src.QueryClientConsensusState(ctx, srch, existingClientID, existingClientState.GetLatestHeight())
+	//	if err != nil {
+	//		return "", err
+	//	}
+	//
+	//	exportedConsState, err := clienttypes.UnpackConsensusState(consensusStateResp.ConsensusState)
+	//	if err != nil {
+	//		return "", err
+	//	}
+	//
+	//	existingConsensusState, ok := exportedConsState.(*tmclient.ConsensusState)
+	//	if !ok {
+	//		return "", fmt.Errorf("got type(%T) expected type(*tmclient.ConsensusState)", exportedConsState)
+	//	}
+	//
+	//	// If the existing client state has not been updated within the trusting period,
+	//	// we do not want to use the existing client since it's in an expired state.
+	//	if existingClientState.IsExpired(existingConsensusState.Timestamp, time.Now()) {
+	//		return "", tmclient.ErrTrustingPeriodExpired
+	//	}
+	//
+	//	// Construct a header for the consensus state of the counterparty chain.
+	//	ibcHeader, err := dst.QueryIBCHeader(ctx, int64(existingClientState.GetLatestHeight().GetRevisionHeight()))
+	//	if err != nil {
+	//		return "", err
+	//	}
+	//
+	//	consensusState, ok := ibcHeader.ConsensusState().(*tmclient.ConsensusState)
+	//	if !ok {
+	//		return "", fmt.Errorf("got type(%T) expected type(*tmclient.ConsensusState)", consensusState)
+	//	}
+	//
+	//	// Determine if the existing consensus state on src for the potential matching client is identical
+	//	// to the consensus state of the counterparty chain.
+	//	if isMatchingTendermintConsensusState(existingConsensusState, consensusState) {
+	//		return existingClientID, nil // found matching client
+	//	}
+	//}
 
 	return "", nil
 }

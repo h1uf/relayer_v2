@@ -6,9 +6,9 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	chantypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	clienttypes "github.com/cosmos/ibc-go/v9/modules/core/02-client/types"
+	chantypes "github.com/cosmos/ibc-go/v9/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v9/modules/core/exported"
 	"github.com/cosmos/relayer/v2/relayer/provider"
 	"go.uber.org/zap"
 )
@@ -36,7 +36,7 @@ func (c *Chain) SendTransferMsg(
 	if err != nil {
 		return err
 	}
-	h, err := c.ChainProvider.QueryClientState(ctx, srch, c.PathEnd.ClientID)
+	_, err = c.ChainProvider.QueryClientState(ctx, srch, c.PathEnd.ClientID)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (c *Chain) SendTransferMsg(
 			return fmt.Errorf("failed to query the client state response: %w", err)
 		}
 
-		clientState, err := clienttypes.UnpackClientState(clientStateRes.ClientState)
+		_, err = clienttypes.UnpackClientState(clientStateRes.ClientState)
 		if err != nil {
 			return fmt.Errorf("failed to unpack client state: %w", err)
 		}
@@ -58,7 +58,7 @@ func (c *Chain) SendTransferMsg(
 			ctx,
 			dsth,
 			dst.ClientID(),
-			clientState.GetLatestHeight(),
+			nil,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to query client consensus state: %w", err)
@@ -83,7 +83,7 @@ func (c *Chain) SendTransferMsg(
 		}
 	}
 
-	clientHeight := h.GetLatestHeight().GetRevisionHeight()
+	clientHeight := uint64(1)
 
 	switch {
 	case toHeightOffset > 0 && toTimeOffset > 0:
@@ -103,7 +103,7 @@ func (c *Chain) SendTransferMsg(
 		SourceChannel: srcChannel.ChannelId,
 		SourcePort:    srcChannel.PortId,
 		TimeoutHeight: clienttypes.Height{
-			RevisionNumber: h.GetLatestHeight().GetRevisionNumber(),
+			RevisionNumber: 1,
 			RevisionHeight: timeoutHeight,
 		},
 		TimeoutTimestamp: timeoutTimestamp,

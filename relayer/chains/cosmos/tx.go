@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/avast/retry-go/v4"
 	"math"
 	"math/big"
 	"math/rand"
@@ -16,7 +17,6 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"cosmossdk.io/store/rootmulti"
-	"github.com/avast/retry-go/v4"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/light"
@@ -33,16 +33,16 @@ import (
 	legacyerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	feetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	conntypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
-	chantypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	commitmenttypes "github.com/cosmos/ibc-go/v8/modules/core/23-commitment/types"
-	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	tmclient "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
-	localhost "github.com/cosmos/ibc-go/v8/modules/light-clients/09-localhost"
+	feetypes "github.com/cosmos/ibc-go/v9/modules/apps/29-fee/types"
+	transfertypes "github.com/cosmos/ibc-go/v9/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v9/modules/core/02-client/types"
+	conntypes "github.com/cosmos/ibc-go/v9/modules/core/03-connection/types"
+	chantypes "github.com/cosmos/ibc-go/v9/modules/core/04-channel/types"
+	commitmenttypes "github.com/cosmos/ibc-go/v9/modules/core/23-commitment/types"
+	host "github.com/cosmos/ibc-go/v9/modules/core/24-host"
+	ibcexported "github.com/cosmos/ibc-go/v9/modules/core/exported"
+	tmclient "github.com/cosmos/ibc-go/v9/modules/light-clients/07-tendermint"
+	//localhost "github.com/cosmos/ibc-go/v9/modules/light-clients/09-localhost"
 	strideicqtypes "github.com/cosmos/relayer/v2/relayer/chains/cosmos/stride"
 	"github.com/cosmos/relayer/v2/relayer/ethermint"
 	"github.com/cosmos/relayer/v2/relayer/provider"
@@ -1051,8 +1051,8 @@ func (cc *CosmosProvider) MsgConnectionOpenTry(msgOpenInit provider.ConnectionIn
 		ProofInit:            proof.ConnectionStateProof,
 		ProofClient:          proof.ClientStateProof,
 		ProofConsensus:       proof.ConsensusStateProof,
-		ConsensusHeight:      proof.ClientState.GetLatestHeight().(clienttypes.Height),
-		Signer:               signer,
+		//ConsensusHeight:      proof.ClientState.GetLatestHeight().(clienttypes.Height),
+		Signer: signer,
 	}
 
 	return NewCosmosMessage(msg, func(signer string) {
@@ -1080,11 +1080,10 @@ func (cc *CosmosProvider) MsgConnectionOpenAck(msgOpenTry provider.ConnectionInf
 			RevisionNumber: proof.ProofHeight.GetRevisionNumber(),
 			RevisionHeight: proof.ProofHeight.GetRevisionHeight(),
 		},
-		ProofTry:        proof.ConnectionStateProof,
-		ProofClient:     proof.ClientStateProof,
-		ProofConsensus:  proof.ConsensusStateProof,
-		ConsensusHeight: proof.ClientState.GetLatestHeight().(clienttypes.Height),
-		Signer:          signer,
+		ProofTry:       proof.ConnectionStateProof,
+		ProofClient:    proof.ClientStateProof,
+		ProofConsensus: proof.ConsensusStateProof,
+		Signer:         signer,
 	}
 
 	return NewCosmosMessage(msg, func(signer string) {
@@ -1476,13 +1475,13 @@ func (cc *CosmosProvider) InjectTrustedFields(ctx context.Context, header ibcexp
 
 	// retrieve dst client from src chain
 	// this is the client that will be updated
-	cs, err := dst.QueryClientState(ctx, int64(h.TrustedHeight.RevisionHeight), dstClientId)
-	if err != nil {
-		return nil, err
-	}
+	//cs, err := dst.QueryClientState(ctx, int64(h.TrustedHeight.RevisionHeight), dstClientId)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// inject TrustedHeight as latest height stored on dst client
-	h.TrustedHeight = cs.GetLatestHeight().(clienttypes.Height)
+	//h.TrustedHeight = cs.GetLatestHeight().(clienttypes.Height)
 
 	// NOTE: We need to get validators from the source chain at height: trustedHeight+1
 	// since the last trusted validators for a header at height h is the NextValidators
@@ -1540,25 +1539,25 @@ func (cc *CosmosProvider) queryTMClientState(ctx context.Context, srch int64, sr
 
 // queryLocalhostClientState retrieves the latest consensus state for a client in state at a given height
 // and unpacks/cast it to localhost client state.
-func (cc *CosmosProvider) queryLocalhostClientState(ctx context.Context, srch int64) (*localhost.ClientState, error) {
-	clientStateRes, err := cc.QueryClientStateResponse(ctx, srch, ibcexported.LocalhostClientID)
-	if err != nil {
-		return &localhost.ClientState{}, err
-	}
-
-	clientStateExported, err := clienttypes.UnpackClientState(clientStateRes.ClientState)
-	if err != nil {
-		return &localhost.ClientState{}, err
-	}
-
-	clientState, ok := clientStateExported.(*localhost.ClientState)
-	if !ok {
-		return &localhost.ClientState{},
-			fmt.Errorf("error when casting exported clientstate to localhost client type, got(%T)", clientStateExported)
-	}
-
-	return clientState, nil
-}
+//func (cc *CosmosProvider) queryLocalhostClientState(ctx context.Context, srch int64) (*localhost.ClientState, error) {
+//	clientStateRes, err := cc.QueryClientStateResponse(ctx, srch, ibcexported.LocalhostClientID)
+//	if err != nil {
+//		return &localhost.ClientState{}, err
+//	}
+//
+//	clientStateExported, err := clienttypes.UnpackClientState(clientStateRes.ClientState)
+//	if err != nil {
+//		return &localhost.ClientState{}, err
+//	}
+//
+//	clientState, ok := clientStateExported.(*localhost.ClientState)
+//	if !ok {
+//		return &localhost.ClientState{},
+//			fmt.Errorf("error when casting exported clientstate to localhost client type, got(%T)", clientStateExported)
+//	}
+//
+//	return clientState, nil
+//}
 
 // DefaultUpgradePath is the default IBC upgrade path set for an on-chain light client
 var defaultUpgradePath = []string{"upgrade", "upgradedIBCState"}

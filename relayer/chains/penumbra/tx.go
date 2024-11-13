@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/avast/retry-go/v4"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -11,7 +12,6 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/store/rootmulti"
-	"github.com/avast/retry-go/v4"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/light"
@@ -23,14 +23,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	legacyerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	cosmosproto "github.com/cosmos/gogoproto/proto"
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	conntypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
-	chantypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	commitmenttypes "github.com/cosmos/ibc-go/v8/modules/core/23-commitment/types"
-	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	tmclient "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	transfertypes "github.com/cosmos/ibc-go/v9/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v9/modules/core/02-client/types"
+	conntypes "github.com/cosmos/ibc-go/v9/modules/core/03-connection/types"
+	chantypes "github.com/cosmos/ibc-go/v9/modules/core/04-channel/types"
+	commitmenttypes "github.com/cosmos/ibc-go/v9/modules/core/23-commitment/types"
+	host "github.com/cosmos/ibc-go/v9/modules/core/24-host"
+	ibcexported "github.com/cosmos/ibc-go/v9/modules/core/exported"
+	tmclient "github.com/cosmos/ibc-go/v9/modules/light-clients/07-tendermint"
 	ics23 "github.com/cosmos/ics23/go"
 	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
 	penumbrafee "github.com/cosmos/relayer/v2/relayer/chains/penumbra/core/component/fee/v1alpha1"
@@ -592,11 +592,11 @@ func (cc *PenumbraProvider) ConnectionOpenTry(ctx context.Context, dstQueryProvi
 			RevisionNumber: proofHeight.GetRevisionNumber(),
 			RevisionHeight: proofHeight.GetRevisionHeight(),
 		},
-		ProofInit:       connStateProof,
-		ProofClient:     clientStateProof,
-		ProofConsensus:  consensusStateProof,
-		ConsensusHeight: clientState.GetLatestHeight().(clienttypes.Height),
-		Signer:          acc,
+		ProofInit:      connStateProof,
+		ProofClient:    clientStateProof,
+		ProofConsensus: consensusStateProof,
+		//ConsensusHeight: clientState.GetLatestHeight().(clienttypes.Height),
+		Signer: acc,
 	}
 
 	return []provider.RelayerMessage{updateMsg, cosmos.NewCosmosMessage(msg, func(signer string) {
@@ -644,11 +644,11 @@ func (cc *PenumbraProvider) ConnectionOpenAck(ctx context.Context, dstQueryProvi
 			RevisionNumber: proofHeight.GetRevisionNumber(),
 			RevisionHeight: proofHeight.GetRevisionHeight(),
 		},
-		ProofTry:        connStateProof,
-		ProofClient:     clientStateProof,
-		ProofConsensus:  consensusStateProof,
-		ConsensusHeight: clientState.GetLatestHeight().(clienttypes.Height),
-		Signer:          acc,
+		ProofTry:       connStateProof,
+		ProofClient:    clientStateProof,
+		ProofConsensus: consensusStateProof,
+		//ConsensusHeight: clientState.GetLatestHeight().(clienttypes.Height),
+		Signer: acc,
 	}
 
 	return []provider.RelayerMessage{updateMsg, cosmos.NewCosmosMessage(msg, func(signer string) {
@@ -1392,8 +1392,8 @@ func (cc *PenumbraProvider) MsgConnectionOpenTry(msgOpenInit provider.Connection
 		ProofInit:            proof.ConnectionStateProof,
 		ProofClient:          proof.ClientStateProof,
 		ProofConsensus:       proof.ConsensusStateProof,
-		ConsensusHeight:      proof.ClientState.GetLatestHeight().(clienttypes.Height),
-		Signer:               signer,
+		//ConsensusHeight:      proof.ClientState.GetLatestHeight().(clienttypes.Height),
+		Signer: signer,
 	}
 
 	return cosmos.NewCosmosMessage(msg, func(signer string) {
@@ -1421,11 +1421,11 @@ func (cc *PenumbraProvider) MsgConnectionOpenAck(msgOpenTry provider.ConnectionI
 			RevisionNumber: proof.ProofHeight.GetRevisionNumber(),
 			RevisionHeight: proof.ProofHeight.GetRevisionHeight(),
 		},
-		ProofTry:        proof.ConnectionStateProof,
-		ProofClient:     proof.ClientStateProof,
-		ProofConsensus:  proof.ConsensusStateProof,
-		ConsensusHeight: proof.ClientState.GetLatestHeight().(clienttypes.Height),
-		Signer:          signer,
+		ProofTry:       proof.ConnectionStateProof,
+		ProofClient:    proof.ClientStateProof,
+		ProofConsensus: proof.ConsensusStateProof,
+		//ConsensusHeight: proof.ClientState.GetLatestHeight().(clienttypes.Height),
+		Signer: signer,
 	}
 
 	return cosmos.NewCosmosMessage(msg, func(signer string) {
@@ -1927,13 +1927,13 @@ func (cc *PenumbraProvider) InjectTrustedFields(ctx context.Context, header ibce
 
 	// retrieve dst client from src chain
 	// this is the client that will be updated
-	cs, err := dst.QueryClientState(ctx, int64(h.TrustedHeight.RevisionHeight), dstClientId)
-	if err != nil {
-		return nil, err
-	}
+	//cs, err := dst.QueryClientState(ctx, int64(h.TrustedHeight.RevisionHeight), dstClientId)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// inject TrustedHeight as latest height stored on dst client
-	h.TrustedHeight = cs.GetLatestHeight().(clienttypes.Height)
+	//h.TrustedHeight = cs.GetLatestHeight().(clienttypes.Height)
 
 	// NOTE: We need to get validators from the source chain at height: trustedHeight+1
 	// since the last trusted validators for a header at height h is the NextValidators

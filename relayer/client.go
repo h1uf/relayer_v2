@@ -3,13 +3,13 @@ package relayer
 import (
 	"context"
 	"fmt"
+	"github.com/avast/retry-go/v4"
 	"time"
 
-	"github.com/avast/retry-go/v4"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	tmclient "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	clienttypes "github.com/cosmos/ibc-go/v9/modules/core/02-client/types"
+	ibcexported "github.com/cosmos/ibc-go/v9/modules/core/exported"
+	tmclient "github.com/cosmos/ibc-go/v9/modules/light-clients/07-tendermint"
 	"github.com/cosmos/relayer/v2/relayer/provider"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -191,15 +191,15 @@ func CreateClient(
 
 	var clientID string
 
-	// Will not reuse same client if override is true
-	if !override {
-		// Check if an identical light client already exists on the src chain which matches the
-		// proposed new client state from dst.
-		clientID, err = findMatchingClient(ctx, src, dst, clientState)
-		if err != nil {
-			return "", fmt.Errorf("failed to find a matching client for the new client state: %w", err)
-		}
-	}
+	//// Will not reuse same client if override is true
+	//if !override {
+	//	// Check if an identical light client already exists on the src chain which matches the
+	//	// proposed new client state from dst.
+	//	clientID, err = findMatchingClient(ctx, src, dst, clientState)
+	//	if err != nil {
+	//		return "", fmt.Errorf("failed to find a matching client for the new client state: %w", err)
+	//	}
+	//}
 
 	if clientID != "" && !override {
 		src.log.Debug(
@@ -278,80 +278,80 @@ func MsgUpdateClient(
 	src, dst *Chain,
 	srch, dsth int64,
 ) (provider.RelayerMessage, error) {
-	var dstClientState ibcexported.ClientState
-	if err := retry.Do(func() error {
-		var err error
-		dstClientState, err = dst.ChainProvider.QueryClientState(ctx, dsth, dst.ClientID())
-		return err
-	}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
-		dst.log.Info(
-			"Failed to query client state when updating clients",
-			zap.String("client_id", dst.ClientID()),
-			zap.Uint("attempt", n+1),
-			zap.Uint("max_attempts", RtyAttNum),
-			zap.Error(err),
-		)
-	})); err != nil {
-		return nil, err
-	}
-
-	var srcHeader, dstTrustedHeader provider.IBCHeader
-
-	eg, egCtx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		return retry.Do(func() error {
-			var err error
-			srcHeader, err = src.ChainProvider.QueryIBCHeader(egCtx, srch)
-			return err
-		}, retry.Context(egCtx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
-			src.log.Info(
-				"Failed to query IBC header when building update client message",
-				zap.String("client_id", dst.ClientID()),
-				zap.Uint("attempt", n+1),
-				zap.Uint("max_attempts", RtyAttNum),
-				zap.Error(err),
-			)
-		}))
-	})
-	eg.Go(func() error {
-		return retry.Do(func() error {
-			var err error
-			dstTrustedHeader, err = src.ChainProvider.QueryIBCHeader(egCtx, int64(dstClientState.GetLatestHeight().GetRevisionHeight())+1)
-			return err
-		}, retry.Context(egCtx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
-			src.log.Info(
-				"Failed to query IBC header when building update client message",
-				zap.String("client_id", dst.ClientID()),
-				zap.Uint("attempt", n+1),
-				zap.Uint("max_attempts", RtyAttNum),
-				zap.Error(err),
-			)
-		}))
-	})
-
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-
-	var updateHeader ibcexported.ClientMessage
-	if err := retry.Do(func() error {
-		var err error
-		updateHeader, err = src.ChainProvider.MsgUpdateClientHeader(srcHeader, dstClientState.GetLatestHeight().(clienttypes.Height), dstTrustedHeader)
-		return err
-	}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
-		src.log.Info(
-			"Failed to build update client header",
-			zap.String("client_id", dst.ClientID()),
-			zap.Uint("attempt", n+1),
-			zap.Uint("max_attempts", RtyAttNum),
-			zap.Error(err),
-		)
-	})); err != nil {
-		return nil, err
-	}
+	//var dstClientState ibcexported.ClientState
+	//if err := retry.Do(func() error {
+	//	var err error
+	//	dstClientState, err = dst.ChainProvider.QueryClientState(ctx, dsth, dst.ClientID())
+	//	return err
+	//}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+	//	dst.log.Info(
+	//		"Failed to query client state when updating clients",
+	//		zap.String("client_id", dst.ClientID()),
+	//		zap.Uint("attempt", n+1),
+	//		zap.Uint("max_attempts", RtyAttNum),
+	//		zap.Error(err),
+	//	)
+	//})); err != nil {
+	//	return nil, err
+	//}
+	//
+	//var srcHeader, dstTrustedHeader provider.IBCHeader
+	//
+	//eg, egCtx := errgroup.WithContext(ctx)
+	//eg.Go(func() error {
+	//	return retry.Do(func() error {
+	//		var err error
+	//		srcHeader, err = src.ChainProvider.QueryIBCHeader(egCtx, srch)
+	//		return err
+	//	}, retry.Context(egCtx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+	//		src.log.Info(
+	//			"Failed to query IBC header when building update client message",
+	//			zap.String("client_id", dst.ClientID()),
+	//			zap.Uint("attempt", n+1),
+	//			zap.Uint("max_attempts", RtyAttNum),
+	//			zap.Error(err),
+	//		)
+	//	}))
+	//})
+	//eg.Go(func() error {
+	//	return retry.Do(func() error {
+	//		var err error
+	//		dstTrustedHeader, err = src.ChainProvider.QueryIBCHeader(egCtx, int64(dstClientState.GetLatestHeight().GetRevisionHeight())+1)
+	//		return err
+	//	}, retry.Context(egCtx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+	//		src.log.Info(
+	//			"Failed to query IBC header when building update client message",
+	//			zap.String("client_id", dst.ClientID()),
+	//			zap.Uint("attempt", n+1),
+	//			zap.Uint("max_attempts", RtyAttNum),
+	//			zap.Error(err),
+	//		)
+	//	}))
+	//})
+	//
+	//if err := eg.Wait(); err != nil {
+	//	return nil, err
+	//}
+	//
+	//var updateHeader ibcexported.ClientMessage
+	//if err := retry.Do(func() error {
+	//	var err error
+	//	updateHeader, err = src.ChainProvider.MsgUpdateClientHeader(srcHeader, dstClientState.GetLatestHeight().(clienttypes.Height), dstTrustedHeader)
+	//	return err
+	//}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+	//	src.log.Info(
+	//		"Failed to build update client header",
+	//		zap.String("client_id", dst.ClientID()),
+	//		zap.Uint("attempt", n+1),
+	//		zap.Uint("max_attempts", RtyAttNum),
+	//		zap.Error(err),
+	//	)
+	//})); err != nil {
+	//	return nil, err
+	//}
 
 	// updates off-chain light client
-	return dst.ChainProvider.MsgUpdateClient(dst.ClientID(), updateHeader)
+	return dst.ChainProvider.MsgUpdateClient(dst.ClientID(), nil)
 }
 
 // UpdateClients updates clients for src on dst and dst on src given the configured paths.

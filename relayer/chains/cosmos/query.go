@@ -24,14 +24,14 @@ import (
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	conntypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
-	chantypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	commitmenttypes "github.com/cosmos/ibc-go/v8/modules/core/23-commitment/types"
-	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	tmclient "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	transfertypes "github.com/cosmos/ibc-go/v9/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v9/modules/core/02-client/types"
+	conntypes "github.com/cosmos/ibc-go/v9/modules/core/03-connection/types"
+	chantypes "github.com/cosmos/ibc-go/v9/modules/core/04-channel/types"
+	commitmenttypes "github.com/cosmos/ibc-go/v9/modules/core/23-commitment/types"
+	host "github.com/cosmos/ibc-go/v9/modules/core/24-host"
+	ibcexported "github.com/cosmos/ibc-go/v9/modules/core/exported"
+	tmclient "github.com/cosmos/ibc-go/v9/modules/light-clients/07-tendermint"
 	"github.com/cosmos/relayer/v2/relayer/chains"
 	"github.com/cosmos/relayer/v2/relayer/provider"
 	"go.uber.org/zap"
@@ -770,11 +770,11 @@ func (cc *CosmosProvider) GenerateConnHandshakeProof(ctx context.Context, height
 		return nil, nil, nil, nil, clienttypes.Height{}, err
 	}
 
-	eg.Go(func() error {
-		var err error
-		consensusStateRes, err = cc.QueryClientConsensusState(ctx, height, clientId, clientState.GetLatestHeight())
-		return err
-	})
+	//eg.Go(func() error {
+	//	var err error
+	//	consensusStateRes, err = cc.QueryClientConsensusState(ctx, height, clientId, clientState.GetLatestHeight())
+	//	return err
+	//})
 	eg.Go(func() error {
 		var err error
 		connectionStateRes, err = cc.QueryConnection(ctx, height, connId)
@@ -1207,42 +1207,42 @@ func (cc *CosmosProvider) QueryStatus(ctx context.Context) (*coretypes.ResultSta
 }
 
 // QueryDenomTrace takes a denom from IBC and queries the information about it
-func (cc *CosmosProvider) QueryDenomTrace(ctx context.Context, denom string) (*transfertypes.DenomTrace, error) {
-	transfers, err := transfertypes.NewQueryClient(cc).DenomTrace(ctx,
-		&transfertypes.QueryDenomTraceRequest{
-			Hash: denom,
-		})
-	if err != nil {
-		return nil, err
-	}
-	return transfers.DenomTrace, nil
+func (cc *CosmosProvider) QueryDenomTrace(ctx context.Context, denom string) (*transfertypes.Hop, error) {
+	//transfers, err := transfertypes.NewQueryClient(cc).DenomTrace(ctx,
+	//	&transfertypes.QueryDenomTraceRequest{
+	//		Hash: denom,
+	//	})
+	//if err != nil {
+	//	return nil, err
+	//}
+	return nil, nil
 }
 
 // QueryDenomTraces returns all the denom traces from a given chain
-func (cc *CosmosProvider) QueryDenomTraces(ctx context.Context, offset, limit uint64, height int64) ([]transfertypes.DenomTrace, error) {
-	qc := transfertypes.NewQueryClient(cc)
-	p := DefaultPageRequest()
-	transfers := []transfertypes.DenomTrace{}
-	for {
-		res, err := qc.DenomTraces(ctx,
-			&transfertypes.QueryDenomTracesRequest{
-				Pagination: p,
-			})
-
-		if err != nil || res == nil {
-			return nil, err
-		}
-
-		transfers = append(transfers, res.DenomTraces...)
-		next := res.GetPagination().GetNextKey()
-		if len(next) == 0 {
-			break
-		}
-
-		time.Sleep(PaginationDelay)
-		p.Key = next
-	}
-	return transfers, nil
+func (cc *CosmosProvider) QueryDenomTraces(ctx context.Context, offset, limit uint64, height int64) ([]transfertypes.Hop, error) {
+	//qc := transfertypes.NewQueryClient(cc)
+	//p := DefaultPageRequest()
+	//transfers := []transfertypes.DenomTrace{}
+	//for {
+	//	res, err := qc.DenomTraces(ctx,
+	//		&transfertypes.QueryDenomTracesRequest{
+	//			Pagination: p,
+	//		})
+	//
+	//	if err != nil || res == nil {
+	//		return nil, err
+	//	}
+	//
+	//	transfers = append(transfers, res.DenomTraces...)
+	//	next := res.GetPagination().GetNextKey()
+	//	if len(next) == 0 {
+	//		break
+	//	}
+	//
+	//	time.Sleep(PaginationDelay)
+	//	p.Key = next
+	//}
+	return nil, nil
 }
 
 func (cc *CosmosProvider) QueryStakingParams(ctx context.Context) (*stakingtypes.Params, error) {
